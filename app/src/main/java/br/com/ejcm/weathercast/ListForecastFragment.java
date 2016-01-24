@@ -38,15 +38,6 @@ public class ListForecastFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-//        String[] data = {
-//                "Mon 6/23 - Sunny - 31/17",
-//                "Tue 6/24 - Foggy - 21/8",
-//                "Wed 6/25 - Cloudy - 22/17",
-//                "Thurs 6/26 - Rainy - 18/11",
-//                "Fri 6/27 - Foggy - 21/10",
-//                "Sat 6/28 - TRAPPED IN WEATHERSTATION - 23/18",
-//                "Sun 6/29 - Sunny - 20/7"
-//        };
         mForecastAdapter = new ArrayAdapter<String>(
                 getActivity(),
                 R.layout.forecast_list_item,
@@ -66,31 +57,55 @@ public class ListForecastFragment extends Fragment {
         fwt.execute();
     }
 
-    private class FetchWeatherTask extends AsyncTask<Void, Void, String[]>{
+    private class FetchWeatherTask extends AsyncTask<Void, Void, String[]> {
 
-        private String[] getWeatherDataFromJson(String forecastJsonStr, int numDays) {
+        private String[] getWeatherDataFromJson(String forecastJsonStr, int numDays) throws JSONException {
+
+            // Location information
+            final String OWM_CITY = "city";
+            final String OWM_CITY_NAME = "name";
+            final String OWM_COORD = "coord";
+
+            // Location coordinate
+            final String OWM_LATITUDE = "lat";
+            final String OWM_LONGITUDE = "lon";
+
+            // Weather information.  Each day's forecast info is an element of the "list" array.
+            final String OWM_LIST = "list";
+
+            final String OWM_PRESSURE = "pressure";
+            final String OWM_HUMIDITY = "humidity";
+            final String OWM_WINDSPEED = "speed";
+            final String OWM_WIND_DIRECTION = "deg";
+
+            // All temperatures are children of the "temp" object.
+            final String OWM_TEMPERATURE = "temp";
+            final String OWM_MAX = "max";
+            final String OWM_MIN = "min";
+
+            final String OWM_WEATHER = "weather";
+            final String OWM_DESCRIPTION = "main";
+            final String OWM_WEATHER_ID = "id";
+
             String[] result = new String[numDays];
-            try {
-                JSONObject forecast = new JSONObject(forecastJsonStr);
-                JSONArray list = forecast.getJSONArray("list");
-                for (int i = 0; i < numDays; i++) {
-                    JSONObject day = list.getJSONObject(i);
-                    JSONObject temp = day.getJSONObject("temp");
-                    String min = temp.getString("min");
-                    String max = temp.getString("max");
-                    String desc = day.getJSONArray("weather")
-                            .getJSONObject(0).getString("main");
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(desc)
-                            .append( " - " )
-                            .append(min)
-                            .append("/")
-                            .append(max);
 
-                    result[i] = sb.toString();
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
+            JSONObject forecast = new JSONObject(forecastJsonStr);
+            JSONArray list = forecast.getJSONArray(OWM_LIST);
+            for (int i = 0; i < numDays; i++) {
+                JSONObject day = list.getJSONObject(i);
+                JSONObject temp = day.getJSONObject(OWM_TEMPERATURE);
+                String min = temp.getString(OWM_MIN);
+                String max = temp.getString(OWM_MAX);
+                String desc = day.getJSONArray(OWM_WEATHER)
+                        .getJSONObject(0).getString(OWM_DESCRIPTION);
+                StringBuilder sb = new StringBuilder();
+                sb.append(desc)
+                        .append(" - ")
+                        .append(min)
+                        .append("/")
+                        .append(max);
+
+                result[i] = sb.toString();
             }
             return result;
         }
@@ -109,6 +124,7 @@ public class ListForecastFragment extends Fragment {
             String location = "Rio de Janeiro";
             String format = "json";
             String units = "metric";
+            String lang = "fr";
             int numDays = 14;
 
             try {
@@ -121,6 +137,7 @@ public class ListForecastFragment extends Fragment {
                 final String FORMAT_PARAM = "mode";
                 final String UNITS_PARAM = "units";
                 final String DAYS_PARAM = "cnt";
+                final String LANGUAGE_PARAM = "lang";
                 final String APPID_PARAM = "appid";
 
                 Uri builtUri = Uri.parse(FORECAST_BASE_URL).buildUpon()
@@ -128,11 +145,11 @@ public class ListForecastFragment extends Fragment {
                         .appendQueryParameter(FORMAT_PARAM, format)
                         .appendQueryParameter(UNITS_PARAM, units)
                         .appendQueryParameter(DAYS_PARAM, Integer.toString(numDays))
+                        .appendQueryParameter(LANGUAGE_PARAM, lang)
                         .appendQueryParameter(APPID_PARAM, "232763e5b836e83388caca0749577747")
                         .build();
 
                 URL url = new URL(builtUri.toString());
-//            Log.v(LOG_TAG, url.toString());
 
                 // Create the request to OpenWeatherMap, and open the connection
                 urlConnection = (HttpURLConnection) url.openConnection();
@@ -141,7 +158,7 @@ public class ListForecastFragment extends Fragment {
 
                 // Read the input stream into a String
                 InputStream inputStream = urlConnection.getInputStream();
-                StringBuffer buffer = new StringBuffer();
+                StringBuilder builder = new StringBuilder();
                 if (inputStream == null) {
                     // Nothing to do.
                     return null;
@@ -152,20 +169,21 @@ public class ListForecastFragment extends Fragment {
                 while ((line = reader.readLine()) != null) {
                     // Since it's JSON, adding a newline isn't necessary (it won't affect parsing)
                     // But it does make debugging a *lot* easier if you print out the completed
-                    // buffer for debugging.
-                    buffer.append(line + "\n");
+                    // builder for debugging.
+                    builder.append(line).append("\n");
                 }
 
-                if (buffer.length() == 0) {
+                if (builder.length() == 0) {
                     // Stream was empty.  No point in parsing.
                     return null;
                 }
-                forecastJsonStr = buffer.toString();
+                forecastJsonStr = builder.toString();
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Error " + e, e);
-//            e.printStackTrace();
+
                 // If the code didn't successfully get the weather data, there's no point in attempting
                 // to parse it.
+                return null;
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
@@ -179,14 +197,24 @@ public class ListForecastFragment extends Fragment {
                 }
             }
 
-            return getWeatherDataFromJson(forecastJsonStr, numDays);
+            try {
+                return getWeatherDataFromJson(forecastJsonStr, numDays);
+            } catch (JSONException e) {
+                Log.e(LOG_TAG, e.getMessage(), e);
+                e.printStackTrace();
+            }
+
+            // This will only happen if there was an error getting or parsing the forecast.
+            return null;
         }
 
         @Override
         protected void onPostExecute(String[] result) {
-            mForecastAdapter.clear();
-            for (String forecast:result)
-                mForecastAdapter.add(forecast);
+            if (result != null) { //To avoid NullPointerException when trying to iterate
+                mForecastAdapter.clear();
+                for (String forecast : result)
+                    mForecastAdapter.add(forecast);
+            }
         }
     }
 
