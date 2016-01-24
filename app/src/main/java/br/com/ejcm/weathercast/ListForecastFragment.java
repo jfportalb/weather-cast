@@ -23,6 +23,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.text.DateFormat;
+import java.util.Date;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -59,6 +61,11 @@ public class ListForecastFragment extends Fragment {
 
     private class FetchWeatherTask extends AsyncTask<Void, Void, String[]> {
 
+        private String formatDate(long dateInMillis) {
+            DateFormat df = DateFormat.getDateInstance(DateFormat.MEDIUM);
+            return df.format(new Date(dateInMillis));
+        }
+
         private String[] getWeatherDataFromJson(String forecastJsonStr, int numDays) throws JSONException {
 
             // Location information
@@ -72,6 +79,8 @@ public class ListForecastFragment extends Fragment {
 
             // Weather information.  Each day's forecast info is an element of the "list" array.
             final String OWM_LIST = "list";
+
+            final String OWM_DATE = "dt";
 
             final String OWM_PRESSURE = "pressure";
             final String OWM_HUMIDITY = "humidity";
@@ -92,14 +101,27 @@ public class ListForecastFragment extends Fragment {
             JSONObject forecast = new JSONObject(forecastJsonStr);
             JSONArray list = forecast.getJSONArray(OWM_LIST);
             for (int i = 0; i < numDays; i++) {
-                JSONObject day = list.getJSONObject(i);
-                JSONObject temp = day.getJSONObject(OWM_TEMPERATURE);
+                // Gets the weather data for that day.
+                JSONObject dayForecast = list.getJSONObject(i);
+
+                //Gets the date and formats it.
+                long dateInMillis = dayForecast.getLong(OWM_DATE)*1000;
+                String date = formatDate(dateInMillis);
+
+                // Gets the weather description.
+                String desc = dayForecast.getJSONArray(OWM_WEATHER)
+                        .getJSONObject(0).getString(OWM_DESCRIPTION);
+
+                //Retrieves the temperature information.
+                JSONObject temp = dayForecast.getJSONObject(OWM_TEMPERATURE);
                 String min = temp.getString(OWM_MIN);
                 String max = temp.getString(OWM_MAX);
-                String desc = day.getJSONArray(OWM_WEATHER)
-                        .getJSONObject(0).getString(OWM_DESCRIPTION);
+
                 StringBuilder sb = new StringBuilder();
-                sb.append(desc)
+                sb
+                        .append(date)
+                        .append(" - ")
+                        .append(desc)
                         .append(" - ")
                         .append(min)
                         .append("/")
@@ -150,6 +172,7 @@ public class ListForecastFragment extends Fragment {
                         .build();
 
                 URL url = new URL(builtUri.toString());
+//                Log.v(LOG_TAG, url.toString());
 
                 // Create the request to OpenWeatherMap, and open the connection
                 urlConnection = (HttpURLConnection) url.openConnection();
