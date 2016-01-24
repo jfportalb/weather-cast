@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.util.Date;
@@ -35,7 +33,7 @@ import java.util.Date;
 public class ListForecastFragment extends Fragment {
 
     private static final String LOG_TAG = ListForecastFragment.class.getName();
-    public static final String DETAIL_STRING = "Detail";
+    public static final String DETAIL_STRING = "DetailActivity";
     private ArrayAdapter<String> mForecastAdapter;
 
     public ListForecastFragment() {
@@ -55,7 +53,7 @@ public class ListForecastFragment extends Fragment {
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent intent = new Intent(getActivity(), Detail.class);
+                Intent intent = new Intent(getActivity(), DetailActivity.class);
                 TextView tv = (TextView) view;
                 intent.putExtra(DETAIL_STRING, tv.getText());
                 startActivity(intent);
