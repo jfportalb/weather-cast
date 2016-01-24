@@ -1,5 +1,6 @@
 package br.com.ejcm.weathercast;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
@@ -8,8 +9,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -32,6 +35,7 @@ import java.util.Date;
 public class ListForecastFragment extends Fragment {
 
     private static final String LOG_TAG = ListForecastFragment.class.getName();
+    public static final String DETAIL_STRING = "Detail";
     private ArrayAdapter<String> mForecastAdapter;
 
     public ListForecastFragment() {
@@ -48,6 +52,15 @@ public class ListForecastFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_list_forecast, container, false);
         ListView list = (ListView) rootView.findViewById(R.id.list_forecast);
         list.setAdapter(mForecastAdapter);
+        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent = new Intent(getActivity(), Detail.class);
+                TextView tv = (TextView) view;
+                intent.putExtra(DETAIL_STRING, tv.getText());
+                startActivity(intent);
+            }
+        });
 
         return rootView;
     }
