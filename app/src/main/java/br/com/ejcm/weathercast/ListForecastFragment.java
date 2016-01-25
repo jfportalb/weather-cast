@@ -67,10 +67,12 @@ public class ListForecastFragment extends Fragment {
     public void onStart() {
         super.onStart();
         FetchWeatherTask fwt = new FetchWeatherTask();
-        fwt.execute();
+        String location = Utility.getPreferredLocation(getActivity());
+        String format = Utility.getPreferredTemperatureFormat(getActivity());
+        fwt.execute(location, format);
     }
 
-    private class FetchWeatherTask extends AsyncTask<Void, Void, String[]> {
+    private class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
 
         private String formatDate(long dateInMillis) {
             DateFormat df = DateFormat.getDateInstance(DateFormat.MEDIUM);
@@ -144,7 +146,7 @@ public class ListForecastFragment extends Fragment {
         }
 
         @Override
-        protected String[] doInBackground(Void... params) {
+        protected String[] doInBackground(String... params) {
 
             // These two need to be declared outside the try/catch
             // so that they can be closed in the finally block.
@@ -154,9 +156,9 @@ public class ListForecastFragment extends Fragment {
             // Will contain the raw JSON response as a string.
             String forecastJsonStr = null;
 
-            String location = "Rio de Janeiro";
+            String location = params[0];
             String format = "json";
-            String units = "metric";
+            String units = params[1];
             String lang = "fr";
             int numDays = 14;
 

@@ -1,6 +1,8 @@
 package br.com.ejcm.weathercast;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.preference.PreferenceActivity;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -35,6 +37,11 @@ public class ListForecastActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            intent.putExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT,
+                    SettingsActivity.GeneralPreferenceFragment.class.getName());
+            intent.putExtra(PreferenceActivity.EXTRA_NO_HEADERS, true);
+            startActivity(intent);
             return true;
         }
 
